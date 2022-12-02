@@ -1,0 +1,26 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Docker build') {
+            steps {
+                sh '''
+                # docker build
+                docker build -t 419388007801.dkr.ecr.ap-southeast-2.amazonaws.com/static-apache:$BUILD_NUMBER .
+                # login to ecr
+                aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 419388007801.dkr.ecr.ap-southeast-2.amazonaws.com
+                # push the image to ecr
+                docker push 419388007801.dkr.ecr.ap-southeast-2.amazonaws.com/static-apache:$BUILD_NUMBER
+                '''      
+            }
+        }
+        stage('EKS Deploy') {
+            steps {
+                sh '''
+                # apply kubectl 
+                kubectl apply -f namespace.yaml deployment.yaml service.yaml ingress.yaml 
+                '''      
+            }
+        }
+    }
+}     
